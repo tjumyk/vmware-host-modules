@@ -550,13 +550,10 @@ VNetCsumAndCopyToUser(const void *src,   // IN: Source
    csum = csum_and_copy_to_user(src, dst, len);
    *err = (csum == 0) ? -EFAULT : 0;
 #else
-   if (!user_access_begin(dst, len)) {
-      *err = -EFAULT;
+   csum = csum_partial(src, len, 0);
+   *err = copy_to_user(dst, src, len) ? -EFAULT : 0;
+   if (*err) {
       csum = 0;
-   } else {
-      *err = 0;
-      csum = csum_partial_copy_nocheck(src, dst, len);
-      user_access_end();
    }
 #endif
    return csum;

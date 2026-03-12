@@ -76,6 +76,11 @@
 #define EXPORTED_ASM_SYMBOL(fn) ".global " ASM_PREFIX #fn "\n"   \
                                 ASM_PREFIX #fn ":\n"
 #define ENDBR ".byte 0xf3, 0x0f, 0x1e, 0xfa\n"
+#if defined(CONFIG_MITIGATION_RETHUNK)
+#define RET_INSN "jmp __x86_return_thunk\n"
+#else
+#define RET_INSN "ret\n"
+#endif
 
 /*
  * Tag the crosspage code C wrapper with the crosspage section and page
@@ -643,7 +648,7 @@ CrossPage_CodePage(void)
    "movq            2(%%rsp),         %%rax\n" /* DTR.offset */
    "addq            $0x10,            %%rsp\n"
    "andq            %[PageAlignMask], %%rax\n"
-   "ret\n"
+   RET_INSN
 
    EXPORTED_ASM_SYMBOL(CrossPage_CodeEnd)
 
@@ -671,16 +676,13 @@ CrossPage_CodePage(void)
      [crossGDTHKLADesc]   "i" (offsetof(VMCrossPageData, crossGDTHKLADesc)),
      [switchHostIDTR]     "i" (offsetof(VMCrossPageData, switchHostIDTR))
    );
-#ifdef CONFIG_RETHUNK
    /*
-    * With CONFIG_RETHUNK, objtool requires an explicit return instruction
-    * instead of relying on __builtin_unreachable(). Otherwise we get
-    * "'naked' return found in MITIGATION_RETHUNK build".
+    * This function is not intended to return; all control paths are handled
+    * inside the inline assembly above.  Marking it unreachable avoids
+    * generating a regular return sequence which would violate
+    * return-thunk (MITIGATION_RETHUNK) validation.
     */
-   __asm__ __volatile__("ret\n");
-#else
    NOT_REACHED_MINIMAL();
-#endif
 }
 
 #ifdef STACK_FRAME_NON_STANDARD

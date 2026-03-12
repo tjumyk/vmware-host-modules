@@ -29,6 +29,20 @@ $(DRIVER)-y := $(subst $(SRCROOT)/, , $(patsubst %.c, %.o, \
 		$(wildcard $(SRCROOT)/linux/*.c $(SRCROOT)/common/*.c \
 		$(SRCROOT)/bootstrap/*.c)))
 
+# vmmon contains selected low-level paths that can trigger objtool validation
+# failures on newer kernels; keep skips narrowly scoped.
+OBJECT_FILES_NON_STANDARD_common/crosspage.o := y
+OBJECT_FILES_NON_STANDARD_common/phystrack.o := y
+OBJECT_FILES_NON_STANDARD_common/task.o := y
+OBJECT_FILES_NON_STANDARD_common/vmx86.o := y
+
+# For non-standard world-switch/task objects, keep direct returns so they
+# don't rely on external return thunk patching paths at runtime.
+CFLAGS_common/crosspage.o += -mfunction-return=keep
+CFLAGS_common/phystrack.o += -mfunction-return=keep
+CFLAGS_common/task.o += -mfunction-return=keep
+CFLAGS_common/vmx86.o += -mfunction-return=keep
+
 clean:
 	rm -rf $(wildcard $(DRIVER).mod.c $(DRIVER).ko .tmp_versions \
 		Module.symvers Modules.symvers Module.markers modules.order \
