@@ -76,11 +76,6 @@
 #define EXPORTED_ASM_SYMBOL(fn) ".global " ASM_PREFIX #fn "\n"   \
                                 ASM_PREFIX #fn ":\n"
 #define ENDBR ".byte 0xf3, 0x0f, 0x1e, 0xfa\n"
-#if defined(CONFIG_RETHUNK) || defined(CONFIG_MITIGATION_RETHUNK)
-#define RET_INSN "jmp __x86_return_thunk\n"
-#else
-#define RET_INSN "ret\n"
-#endif
 
 /*
  * Tag the crosspage code C wrapper with the crosspage section and page
@@ -648,7 +643,7 @@ CrossPage_CodePage(void)
    "movq            2(%%rsp),         %%rax\n" /* DTR.offset */
    "addq            $0x10,            %%rsp\n"
    "andq            %[PageAlignMask], %%rax\n"
-   RET_INSN
+   "ret\n"
 
    EXPORTED_ASM_SYMBOL(CrossPage_CodeEnd)
 
